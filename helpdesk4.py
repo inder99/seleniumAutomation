@@ -14,7 +14,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from selenium.common.exceptions import TimeoutException
+from PIL import UnidentifiedImageError
 
+# write the console statements to the mentioned fileName
+sys.stdout = open('./logHelpdesk4', 'a')
 
 path_to_tesseract = r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"
 
@@ -39,6 +42,7 @@ browser.maximize_window()
 messageToWrite = ''
 applicationStatus = ''
 lastRowReferenceNo = ''
+typeOfApplication = ''
 flagLicenseApplication = 1
 numberOfRows = 1
 # PMU url
@@ -53,6 +57,10 @@ def setMessageToWrite(s):
     global messageToWrite
     messageToWrite = s
 
+def setTypeOfApplication(s):
+    global typeOfApplication
+    typeOfApplication = s
+
 def setApplicationStatus(s):
     global applicationStatus
     applicationStatus = s
@@ -60,6 +68,11 @@ def setApplicationStatus(s):
 def setflagLicenseApplication(flg):
     global flagLicenseApplication
     flagLicenseApplication = flg
+    
+def setlastRowReferenceNo(s):
+    global lastRowReferenceNo
+    lastRowReferenceNo = ''
+    lastRowReferenceNo = s  
 # function to define whether substring exist in String or not
 def checkSubstring(string, sub_str):
     string= string.lower()
@@ -69,6 +82,11 @@ def checkSubstring(string, sub_str):
     else:
         return True
 
+def clearTheVariablesToDefault() :
+    setMessageToWrite('')
+    setApplicationStatus('')
+    setflagLicenseApplication(1)
+    
 # Extract captcha Text from an captch Xpath image
 def getCaptchaText(captchaImageXpath):
     
@@ -86,9 +104,9 @@ def getCaptchaText(captchaImageXpath):
     imgCaptchSrc=imgCaptchXpath.get_attribute("src")
 
     # Store the image in temporary from the src path
-    urllib.request.urlretrieve(imgCaptchSrc, "captchHelpdesk4.png")
+    urllib.request.urlretrieve(imgCaptchSrc, "C:/Users/LogicSoftIT/Documents/selenium/captchHelpdesk4.png")
 
-    image_path = r"captchHelpdesk4.png"
+    image_path = r"C:/Users/LogicSoftIT/Documents/selenium/captchHelpdesk4.png"
     
     # Opening the image & storing it in an image object
     img = Image.open(image_path)
@@ -136,18 +154,22 @@ def loginForHelpdesk4() :
 
     browser.implicitly_wait(16)
     
-    # Get captcha text from an image
-    captchaText = getCaptchaText("/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[2]/p[3]/img")
+    try:
+        # Get captcha text from an image
+        captchaText = getCaptchaText("/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[2]/p[3]/img")
 
-    browser.implicitly_wait(16)
-    
-    # Fetch Xpath of Captcha Input field and send captcha
-    browser.find_element(By.XPATH,"/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[2]/p[4]/input").send_keys(captchaText)
+        browser.implicitly_wait(16)
+        
+        # Fetch Xpath of Captcha Input field and send captcha
+        browser.find_element(By.XPATH,"/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[2]/p[4]/input").send_keys(captchaText)
 
-    browser.implicitly_wait(16)
-
-    # Fetch Xpath of SignIn and Click on it
-    browser.find_element(By.XPATH, "/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[3]/div/button[1]").click()
+        browser.implicitly_wait(16)
+        
+    except UnidentifiedImageError:
+        WebDriverWait(browser, 10)
+        # Fetch Xpath of SignIn and Click on it
+    finally:
+        browser.find_element(By.XPATH, "/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[3]/div/button[1]").click()
 
 
 def openTicketsInHelpdesk():
@@ -167,9 +189,13 @@ def openTicketsInHelpdesk():
 
 # Fetch the Application/License number of the last row of the table
 def fetchLastRowApplicationRef():
-    global lastRowReferenceNo
-    lastRowReferenceNo = browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[3]").text
 
+    browser.implicitly_wait(16)
+    
+    setlastRowReferenceNo(browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[3]").text)
+    
+    print("Ticket No - " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[4]").text)
+    print("Application No - " + lastRowReferenceNo)
     # Flag to identify the type License or Registration
     # By default we assume it is License category
     flagLicenseApplication = 1
@@ -183,7 +209,7 @@ def fetchLastRowApplicationRef():
 
 # Login to PMU Login  
 def pmuLogin():
-    print('navigating to: ' + link)
+    print('navigating to PMU Link: ' + link)
     
     browser.get(link)
     
@@ -196,18 +222,27 @@ def pmuLogin():
     browser.implicitly_wait(16)
     
     browser.implicitly_wait(8)
-     
-    c = getCaptchaText("//*[@id='signin']/form/div[2]/p[3]/img")
     
-    browser.implicitly_wait(16)
-    
-    # Fill the input field with captcha
-    browser.find_element(By.XPATH,"//*[@id='signin']/form/div[2]/p[4]/input").send_keys(c)
+    try:
+        
+        c = getCaptchaText("//*[@id='signin']/form/div[2]/p[3]/img")
+        
+        browser.implicitly_wait(16)
+        
+        # Fill the input field with captcha
+        browser.find_element(By.XPATH,"//*[@id='signin']/form/div[2]/p[4]/input").send_keys(c)
 
-    browser.implicitly_wait(16)
-
-    # click on signin
-    browser.find_element(By.XPATH, "//*[@id='signin']/form/div[3]/div/button[1]").click()
+        browser.implicitly_wait(16)
+        
+    except UnidentifiedImageError:
+        
+        print("Kindly fill the captcha as captcha image not Loaded")
+        
+        WebDriverWait(browser, 10)
+        
+    finally:
+        # click on signin
+        browser.find_element(By.XPATH, "//*[@id='signin']/form/div[3]/div/button[1]").click()
 
 def fetchApplicationStatus():
     browser.implicitly_wait(16)
@@ -237,12 +272,27 @@ def fetchApplicationStatus():
     
     # Fetch the application status of the application
     applicationStatus = browser.find_element(By.XPATH, "//*[@id='container']/div[3]/div[4]").text
-    print("App" + applicationStatus)
-    messageToWrite = lastRowReferenceNo + ' status is "' + applicationStatus + '". '
+    typeOfApplication = browser.find_element(By.XPATH, "//*[@id='container']/div[1]/div[4]/label").text
+    setTypeOfApplication(typeOfApplication)
+    print("Application status " + applicationStatus)
+    messageToWrite = lastRowReferenceNo + ' type is ' + typeOfApplication + ' and status is "' + applicationStatus + '". '
 
-    print("message", messageToWrite)
-    if checkSubstring(applicationStatus, "Reverted"):
-        browser.find_element(By.XPATH, "//*[@id='container'']/div[9]/a[1]").click()
+    print("message - ", messageToWrite)
+    
+    if checkSubstring(applicationStatus, "Reverted"):    
+        # Please search by application ref no. because modification history is dependent on application reference no.
+        if(len(lastRowReferenceNo) == 14 ):
+            getApplicationNo = browser.find_element("//*[@id='container'']/div[1]/div[2]/label/span[1]/span").text
+            
+            browser.find_element(By.XPATH, "//*[@id='container']/form/div[1]/div[2]/input").send_keys(getApplicationNo)
+
+            browser.implicitly_wait(8)
+            # Click on submit button
+            browser.find_element(By.XPATH, "//*[@id='container']/form/div[2]/button").click()
+            
+            browser.implicitly_wait(16)
+            
+        browser.find_element(By.XPATH, "//*[@id='container']/div[9]/a[1]/label").click()
         fboRemark = browser.find_element(By.XPATH, "//*[@id='container']/div[9]/div[1]/div/div/table/tbody/tr[2]/td[3]").text
         messageToWrite = messageToWrite + ' FBO remarks is - ' + fboRemark + '. '
         
@@ -260,11 +310,16 @@ def moveTicketToHelpdesk() :
     ddelement= Select(browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[5]/table/tbody/tr[1]/td/select"))
     ddelement.select_by_visible_text('Helpdesk')
        
-def responToTicket():
+def responseToTicket():
     space = " "
     textToAppendWithMessage = messageToWrite
     textIncompleteMessageToAppend = "Login to Foscso portal and Kindly check in 'Incomplete Application' Home Dashboard foscos portal. "
-    textHowToApplyLicense = "After license/registration is issued, for any modification, you need to apply at the portal of Foscos, under 'Modification' Tab 'Apply for Modification in License/Registration' alongWith supported document after that your application will move to the concerned Local Authority , For Registration it will go to 'RA'(Registration Authority) , for License it will go to 'DO'(Designated Officer). Click on the application number which is hyperlink to your modification of your application. https://foscos.fssai.gov.in/assets/docs/Howtoapplyformodificationoflicense.pdf ."
+    textHowToApplyLicense = """After license/registration is issued, for any modification, you need to apply at the portal of Foscos, under 
+    'Modification' Tab 'Apply for Modification in License/Registration' alongWith supported document after that your application will move
+    to the concerned Local Authority , For Registration it will go to 'RA'(Registration Authority) , for License it will go to 
+    'DO'(Designated Officer). Click on the application number which is hyperlink to your modification of your application.
+    https://foscos.fssai.gov.in/assets/docs/Howtoapplyformodificationoflicense.pdf . User Manutal 'https://foscos.fssai.gov.in/user-manual'
+    """
     textApplicationRevertedToFBO = "Respond to Reverted Application https://foscos.fssai.gov.in/assets/docs/Howtorespondtoarevertedapplication.pdf ."
     textAttachScreenshot = space + " Kindly attach the screenshot of the technical error that you are facing."
     textToSurrender = """To surrender license/registration application needs to be in active state.
@@ -275,44 +330,55 @@ https://foscos.fssai.gov.in/user-manual
 Order mentioned about renew after expiry
 https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry_date_29_10_2021.pdf"
 """
+    textToHelpdesk = 'Please advise.'
+    textToExpedite = 'Application is pending for approval. Please expedite the process.'
+        
     # Click on the Proceed of the last row
     browser.find_element(By.XPATH, "(//table[2]/tbody/tr/td)[last()]").click()
     
-    problem_description = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[4]/div[2]/textarea").text
+    problem_description = ''
     
-    print('response to ticket' + messageToWrite)
+    try:
+        problem_description = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[4]/div[2]/textarea").text
+    except UnicodeEncodeError as str:
+        print('unicode issue in parsing the Problem_description', str)
+        pass
+    
+    print('response to ticket - ' + messageToWrite)
+    
     if(checkSubstring(applicationStatus, "Incomplete Application")) :
         textToAppendWithMessage = textToAppendWithMessage + textIncompleteMessageToAppend
     elif(checkSubstring(applicationStatus, "issued")) : 
         textToAppendWithMessage = messageToWrite + textHowToApplyLicense
     elif checkSubstring(applicationStatus, "Reverted"):
         textToAppendWithMessage = textToAppendWithMessage + textApplicationRevertedToFBO
-    elif checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"):
-        textToAppendWithMessage = textToAppendWithMessage + "Please expidite the process."
+    elif checkSubstring(typeOfApplication, "Renewal") or checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"):
+        textToAppendWithMessage = textToAppendWithMessage + textToExpedite
     elif checkSubstring(applicationStatus, "Rejected"):
-        textToAppendWithMessage = textToAppendWithMessage + "Please advise."
-    
+        textToAppendWithMessage = textToAppendWithMessage + textToHelpdesk
+        
     if checkSubstring(problem_description, "surrender"):
         textToAppendWithMessage = textToAppendWithMessage + textToSurrender
-    
+            
     checkScreenshot = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").text
     
-    print('checkScreenshot', checkScreenshot)
+    print('checkScreenshot - ', checkScreenshot)
     
     if checkSubstring(checkScreenshot, "N/A"):
         textToAppendWithMessage = textToAppendWithMessage + textAttachScreenshot
     
     if len(textToAppendWithMessage) != len(messageToWrite):
         setMessageToWrite(textToAppendWithMessage)
+    
     # Fetch Xpath of textarea and write message on the text area - an answer to the ticket    
     browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[5]/table/tbody/tr[1]/td/textarea").send_keys(messageToWrite)
     
-    if checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"):
+    if (typeOfApplication == 'Renewal' and checkSubstring(applicationStatus, "Stage")) or (checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage")):
         moveTicketToDelayIssuance()
     elif checkSubstring(applicationStatus, "Rejected"):
         moveTicketToHelpdesk()
         browser.find_element(By.XPATH, BUTTON_CLOSE_TICKET_XPATH).click()
-
+        print("Rejected appliation moved to the Heldpdesk")
 
 loginForHelpdesk4()
 openTicketsInHelpdesk()
@@ -324,10 +390,39 @@ fetchApplicationStatus()
 loginForHelpdesk4()
 openTicketsInHelpdesk()
 
-responToTicket()
- 
+responseToTicket()
+
+clearTheVariablesToDefault()
+
+i = 0
+while i <=10:
+    pattern='https://foscos.fssai.gov.in/officer/helpdesk/open-ticket'
+    
+    try:
+        wait = WebDriverWait(browser,90)
+        wait.until(EC.url_matches(pattern))
+    except TimeoutException as ex:
+        print("Exception has been thrown. " + str(ex))
+        break
+        
+    fetchLastRowApplicationRef()
+
+    pmuLogin()
+    fetchApplicationStatus()
+
+    loginForHelpdesk4()
+    openTicketsInHelpdesk()
+    responseToTicket()
+    
+    clearTheVariablesToDefault()
+    i = i+1
+
+
 def launchBrowser():
     while(True):
        pass
-   
+
+# close write to the log file
+sys.stdout.close()
+  
 launchBrowser()

@@ -40,8 +40,6 @@ browser.find_element(By.XPATH,"/html/body/app-root/app-login/main-layout/div/div
 # send password to the username field via send keys
 browser.find_element(By.XPATH,"/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[2]/p[2]/input").send_keys(password)
 
-browser.implicitly_wait(8)
-
 browser.implicitly_wait(16)
 
 # get the src of the image (captcha)

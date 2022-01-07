@@ -86,7 +86,7 @@ def clearTheVariablesToDefault() :
     setMessageToWrite('')
     setApplicationStatus('')
     setflagLicenseApplication(1)
-    
+    setlastRowReferenceNo('')
 # Extract captcha Text from an captch Xpath image
 def getCaptchaText(captchaImageXpath):
     
@@ -191,10 +191,12 @@ def openTicketsInHelpdesk():
 def fetchLastRowApplicationRef():
 
     browser.implicitly_wait(16)
-    
-    setlastRowReferenceNo(browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[3]").text)
-    
-    print("Ticket No - " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[4]").text)
+    lastRowReferenceNo = browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[3]").text
+    setlastRowReferenceNo(lastRowReferenceNo)
+    try:
+        print("Ticket No - " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[4]").text)
+    except:
+        pass
     print("Application No - " + lastRowReferenceNo)
     # Flag to identify the type License or Registration
     # By default we assume it is License category
@@ -367,7 +369,10 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
     
     if checkSubstring(checkScreenshot, "N/A"):
         textToAppendWithMessage = textToAppendWithMessage + textAttachScreenshot
-    
+    else:
+        # click on view
+        browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").click()
+
     if len(textToAppendWithMessage) != len(messageToWrite):
         setMessageToWrite(textToAppendWithMessage)
     
@@ -378,7 +383,7 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
         moveTicketToDelayIssuance()
     elif checkSubstring(applicationStatus, "Rejected"):
         moveTicketToHelpdesk()
-        browser.find_element(By.XPATH, BUTTON_CLOSE_TICKET_XPATH).click()
+        #browser.find_element(By.XPATH, BUTTON_CLOSE_TICKET_XPATH).click()
         print("Rejected appliation moved to the Heldpdesk")
 
 loginForHelpdesk4()
@@ -405,7 +410,9 @@ while i <=10:
     except TimeoutException as ex:
         print("Exception has been thrown. Timeout more than 90 seconds" + str(ex))
         break
-        
+    
+    browser.implicitly_wait(16)
+      
     fetchLastRowApplicationRef()
 
     pmuLogin()
@@ -414,7 +421,7 @@ while i <=10:
     loginForHelpdesk4()
     openTicketsInHelpdesk()
     responseToTicket()
-    
+    lastRowReferenceNo = ''
     clearTheVariablesToDefault()
     i = i+1
 

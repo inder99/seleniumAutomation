@@ -3,7 +3,11 @@ password = "Chankya99#"
 emailpassword = "Chankya99"
 
 loginFoscosPmuUsername = "pmu1"
-loginFoscosPmuPassword = "Automata@44"
+loginFoscosPmuPassword =  "Automata@44"
+
+
+loginFoscosPmuUsername2 = "pmu2"
+loginFoscosPmuPassword2 =  "Shweta@1234"
 
 loginHelpdesk4Username = "helpdesknodalofficer4"
 loginHelpdesk4Password = "Lsipl#2021"

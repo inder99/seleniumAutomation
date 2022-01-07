@@ -166,7 +166,8 @@ def loginForHelpdesk4() :
         browser.implicitly_wait(16)
         
     except UnidentifiedImageError:
-        WebDriverWait(browser, 10)
+        browser.implicitly_wait(32)
+        print("Captch Error in Heldpesk4")
         # Fetch Xpath of SignIn and Click on it
     finally:
         browser.find_element(By.XPATH, "/html/body/app-root/app-login/main-layout/div/div/div/div[1]/div/div[1]/form/div[3]/div/button[1]").click()
@@ -284,8 +285,7 @@ def fetchApplicationStatus():
     if checkSubstring(applicationStatus, "Reverted"):    
         # Please search by application ref no. because modification history is dependent on application reference no.
         if(len(lastRowReferenceNo) == 14 ):
-            getApplicationNo = browser.find_element("//*[@id='container'']/div[1]/div[2]/label/span[1]/span").text
-            
+            getApplicationNo = browser.find_element(By.XPATH, "/html/body/app-root/app-track-license/loggedin-layout/div[3]/div/div[2]/div/div[1]/div[2]/label/span[1]/a").text
             browser.find_element(By.XPATH, "//*[@id='container']/form/div[1]/div[2]/input").send_keys(getApplicationNo)
 
             browser.implicitly_wait(8)
@@ -316,13 +316,23 @@ def responseToTicket():
     space = " "
     textToAppendWithMessage = messageToWrite
     textIncompleteMessageToAppend = "Login to Foscso portal and Kindly check in 'Incomplete Application' Home Dashboard foscos portal. "
-    textHowToApplyLicense = """After license/registration is issued, for any modification, you need to apply at the portal of Foscos, under 
+    textHowToApplyModification = """After license/registration is issued, for any modification, you need to apply at the portal of Foscos, under 
     'Modification' Tab 'Apply for Modification in License/Registration' alongWith supported document after that your application will move
     to the concerned Local Authority , For Registration it will go to 'RA'(Registration Authority) , for License it will go to 
     'DO'(Designated Officer). Click on the application number which is hyperlink to your modification of your application.
-    https://foscos.fssai.gov.in/assets/docs/Howtoapplyformodificationoflicense.pdf . User Manutal 'https://foscos.fssai.gov.in/user-manual'
+    https://foscos.fssai.gov.in/assets/docs/Howtoapplyformodificationoflicense.pdf . User Manual 'https://foscos.fssai.gov.in/user-manual'
     """
-    textApplicationRevertedToFBO = "Respond to Reverted Application https://foscos.fssai.gov.in/assets/docs/Howtorespondtoarevertedapplication.pdf ."
+    textToKYO = """ Kindly check with the local authority and explain your concern, to know the authority - for 
+    Registration you can contact RA(Registration Authority) and for license you can contact DO(Designated officer)
+    your district and state, please check the FosCos website under "Know your Officer" Tab"""
+    textToAskAuthorityToReturnApplication = """
+    Please contact your local authority - for 
+    Registration you can contact RA(Registration Authority) and for license you can contact DO(Designated officer)
+    and explain your issue and ask them to revert to you(FBO). 
+    To know the local authority(Designated Authority) 
+    of your district and state, please check the FosCos website and visit under "Know your Officer" Tab. I hope it will solve your query"""
+    textApplicationRevertedToFBO = """Respond to Reverted Application 
+    https://foscos.fssai.gov.in/assets/docs/Howtorespondtoarevertedapplication.pdf ."""
     textAttachScreenshot = space + " Kindly attach the screenshot of the technical error that you are facing."
     textToSurrender = """To surrender license/registration application needs to be in active state.
 If the license/registration certificate is expired then you need to renew it first and then need to apply for the surrender.
@@ -332,6 +342,8 @@ https://foscos.fssai.gov.in/user-manual
 Order mentioned about renew after expiry
 https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry_date_29_10_2021.pdf"
 """
+    textToUpgrade = """Registration can not be moved to License category. For License, FBO need to apply for new application. You can upgrade license from 
+    state to central via modification.""" + textHowToApplyModification
     textToHelpdesk = 'Please advise.'
     textToExpedite = 'Application is pending for approval. Please expedite the process.'
         
@@ -351,10 +363,16 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
     
     if(checkSubstring(applicationStatus, "Incomplete Application")) :
         textToAppendWithMessage = textToAppendWithMessage + textIncompleteMessageToAppend
+    elif checkSubstring(problem_description, "state to central") or checkSubstring(problem_description, "upgrade"):
+        textToAppendWithMessage = textToAppendWithMessage + textToUpgrade
     elif(checkSubstring(applicationStatus, "issued")) : 
-        textToAppendWithMessage = messageToWrite + textHowToApplyLicense
+        textToAppendWithMessage = messageToWrite + textHowToApplyModification
     elif checkSubstring(applicationStatus, "Reverted"):
         textToAppendWithMessage = textToAppendWithMessage + textApplicationRevertedToFBO
+        if checkSubstring(problem_description, "unable") or checkSubstring(problem_description, "edit") or checkSubstring(problem_description, "CHANGE"):    
+            textToAppendWithMessage = textToAppendWithMessage + textToKYO
+    elif checkSubstring(applicationStatus, "Stage") and checkSubstring(problem_description, "edit"):
+        textToAppendWithMessage = textToAppendWithMessage + textToAskAuthorityToReturnApplication
     elif checkSubstring(typeOfApplication, "Renewal") or checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"):
         textToAppendWithMessage = textToAppendWithMessage + textToExpedite
     elif checkSubstring(applicationStatus, "Rejected"):
@@ -362,15 +380,16 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
         
     if checkSubstring(problem_description, "surrender"):
         textToAppendWithMessage = textToAppendWithMessage + textToSurrender
-            
+   
     checkScreenshot = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").text
     
     print('checkScreenshot - ', checkScreenshot)
     
     if checkSubstring(checkScreenshot, "N/A"):
         textToAppendWithMessage = textToAppendWithMessage + textAttachScreenshot
-    else:
-        browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").click()
+    #else:
+        # click on view
+       # browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").click()
 
     if len(textToAppendWithMessage) != len(messageToWrite):
         setMessageToWrite(textToAppendWithMessage)
@@ -384,33 +403,13 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
         moveTicketToHelpdesk()
         #browser.find_element(By.XPATH, BUTTON_CLOSE_TICKET_XPATH).click()
         print("Rejected appliation moved to the Heldpdesk")
-
+    
+    
 loginForHelpdesk4()
 openTicketsInHelpdesk()
-fetchLastRowApplicationRef()
-
-pmuLogin()
-fetchApplicationStatus()
-
-loginForHelpdesk4()
-openTicketsInHelpdesk()
-
-responseToTicket()
-
-clearTheVariablesToDefault()
 
 i = 0
 while i <=10:
-    pattern='https://foscos.fssai.gov.in/officer/helpdesk/open-ticket'
-    
-    try:
-        wait = WebDriverWait(browser,90)
-        wait.until(EC.url_matches(pattern))
-    except TimeoutException as ex:
-        print("Exception has been thrown. Timeout more than 90 seconds" + str(ex))
-        break
-    
-    browser.implicitly_wait(16)
       
     fetchLastRowApplicationRef()
 
@@ -422,8 +421,20 @@ while i <=10:
     responseToTicket()
     lastRowReferenceNo = ''
     clearTheVariablesToDefault()
+    
     i = i+1
 
+    pattern='https://foscos.fssai.gov.in/officer/helpdesk/open-ticket'
+    
+    try:
+        wait = WebDriverWait(browser,90)
+        wait.until(EC.url_matches(pattern))
+    except TimeoutException as ex:
+        print("Exception has been thrown. Timeout more than 90 seconds" + str(ex))
+        break
+    
+    browser.implicitly_wait(16)
+    
 
 def launchBrowser():
     while(True):

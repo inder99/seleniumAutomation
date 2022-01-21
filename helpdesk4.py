@@ -45,6 +45,7 @@ lastRowReferenceNo = ''
 typeOfApplication = ''
 flagLicenseApplication = 1
 numberOfRows = 1
+startOfIndex = 2
 # PMU url
 link = config.urlFoscosOfficer
 
@@ -192,10 +193,10 @@ def openTicketsInHelpdesk():
 def fetchLastRowApplicationRef():
 
     browser.implicitly_wait(16)
-    lastRowReferenceNo = browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[3]").text
+    lastRowReferenceNo = browser.find_element(By.XPATH, "(//table[2]/tbody/tr[" + str(startOfIndex) + "]/td[3])").text
     setlastRowReferenceNo(lastRowReferenceNo)
     try:
-        print("Ticket No - " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[4]").text)
+        print("Ticket No - " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr[" + str(startOfIndex) + "]/td[4])").text)
     except:
         pass
     print("Application No - " + lastRowReferenceNo)
@@ -281,18 +282,21 @@ def fetchApplicationStatus():
     messageToWrite = lastRowReferenceNo + ' type is ' + typeOfApplication + ' and status is "' + applicationStatus + '". '
 
     print("message - ", messageToWrite)
+    #print( "hello " + browser.find_element(By.XPATH, "//*[@id='container']/div[1]/div[2]/label/span[1]/a").text)
     
     if checkSubstring(applicationStatus, "Reverted"):    
         # Please search by application ref no. because modification history is dependent on application reference no.
         if(len(lastRowReferenceNo) == 14 ):
-            getApplicationNo = browser.find_element(By.XPATH, "/html/body/app-root/app-track-license/loggedin-layout/div[3]/div/div[2]/div/div[1]/div[2]/label/span[1]/a").text
-            browser.find_element(By.XPATH, "//*[@id='container']/form/div[1]/div[2]/input").send_keys(getApplicationNo)
+            tempInputXpath = browser.find_element(By.XPATH, "//*[@id='container']/form/div[1]/div[2]/input")
+            tempInputXpath.clear()
+            getApplicationNo = browser.find_element(By.XPATH, "//*[@id='container']/div[1]/div[2]/label/span[1]/a").text
+            tempInputXpath.send_keys(getApplicationNo)
 
             browser.implicitly_wait(8)
-            # Click on submit button
+             # Click on submit button
             browser.find_element(By.XPATH, "//*[@id='container']/form/div[2]/button").click()
             
-            browser.implicitly_wait(16)
+        browser.implicitly_wait(16)
             
         browser.find_element(By.XPATH, "//*[@id='container']/div[9]/a[1]/label").click()
         fboRemark = browser.find_element(By.XPATH, "//*[@id='container']/div[9]/div[1]/div/div/table/tbody/tr[2]/td[3]").text
@@ -345,23 +349,25 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
     textToUpgrade = """Registration can not be moved to License category. For License, FBO need to apply for new application. You can upgrade license from 
     state to central via modification.""" + textHowToApplyModification
     textToHelpdesk = 'Please advise.'
-    textToExpedite = 'Application is pending for approval. Please expedite the process.'
-        
+    textToExpedite = 'Application is pending for approval from authority. Please expedite the process.'
+
+    print("Sr. No " + browser.find_element(By.XPATH, "(//table[2]/tbody/tr[" + str(startOfIndex) + "]/td[1])").text)        
     # Click on the Proceed of the last row
-    browser.find_element(By.XPATH, "(//table[2]/tbody/tr/td)[last()]").click()
-    
+    browser.find_element(By.XPATH, "(//table[2]/tbody/tr[" + str(startOfIndex) + "]/td[7])").click()
     problem_description = ''
     
     try:
         problem_description = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[4]/div[2]/textarea").text
         print('Problem Description' + problem_description)
-    except UnicodeEncodeError as str:
-        print('unicode issue in parsing the Problem_description', str)
+    except UnicodeEncodeError as str1:
+        print('unicode issue in parsing the Problem_description', str1)
         pass
     
     print('response to ticket - ' + messageToWrite)
     
-    if(checkSubstring(applicationStatus, "Incomplete Application")) :
+    if checkSubstring(problem_description, "surrender"):
+        textToAppendWithMessage = textToAppendWithMessage + textToHelpdesk
+    elif(checkSubstring(applicationStatus, "Incomplete Application")) :
         textToAppendWithMessage = textToAppendWithMessage + textIncompleteMessageToAppend
     elif checkSubstring(problem_description, "state to central") or checkSubstring(problem_description, "upgrade"):
         textToAppendWithMessage = textToAppendWithMessage + textToUpgrade
@@ -369,23 +375,28 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
         textToAppendWithMessage = messageToWrite + textHowToApplyModification
     elif checkSubstring(applicationStatus, "Reverted"):
         textToAppendWithMessage = textToAppendWithMessage + textApplicationRevertedToFBO
-        if checkSubstring(problem_description, "unable") or checkSubstring(problem_description, "edit") or checkSubstring(problem_description, "CHANGE"):    
+        if (checkSubstring(problem_description, "unable") or checkSubstring(problem_description, "edit") or 
+            checkSubstring(problem_description, "CHANGE") or  checkSubstring(problem_description, "mistake") or 
+            checkSubstring(problem_description, "enter")):  
             textToAppendWithMessage = textToAppendWithMessage + textToKYO
-    elif checkSubstring(applicationStatus, "Stage") and checkSubstring(problem_description, "edit"):
+    elif checkSubstring(applicationStatus, "Stage") and checkSubstring(problem_description, "edit") and checkSubstring(problem_description, "wrong") and checkSubstring(problem_description, "modify"):
         textToAppendWithMessage = textToAppendWithMessage + textToAskAuthorityToReturnApplication
     elif checkSubstring(typeOfApplication, "Renewal") or checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"):
         textToAppendWithMessage = textToAppendWithMessage + textToExpedite
     elif checkSubstring(applicationStatus, "Rejected"):
         textToAppendWithMessage = textToAppendWithMessage + textToHelpdesk
         
-    if checkSubstring(problem_description, "surrender"):
-        textToAppendWithMessage = textToAppendWithMessage + textToSurrender
+    
    
     checkScreenshot = browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/table/tbody/tr[2]/td[7]/span").text
     
     print('checkScreenshot - ', checkScreenshot)
     
-    if checkSubstring(checkScreenshot, "N/A"):
+    if (checkSubstring(checkScreenshot, "N/A") and 
+        not (
+            checkSubstring(problem_description, "surrender") or checkSubstring(applicationStatus, "Rejected") or checkSubstring(applicationStatus, "Approval pending by initial Authority for change of Authority") or (typeOfApplication == 'Renewal' and checkSubstring(applicationStatus, "Stage")) or (checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage"))
+            )
+        ):
         textToAppendWithMessage = textToAppendWithMessage + textAttachScreenshot
     #else:
         # click on view
@@ -397,20 +408,26 @@ https://fssai.gov.in/upload/advisories/2021/10/617bd59fbcaedOrder_License_Expiry
     # Fetch Xpath of textarea and write message on the text area - an answer to the ticket    
     browser.find_element(By.XPATH, "//*[@id='Body']/app-root/app-ticket-action/loggedin-layout/div[3]/div/div[5]/table/tbody/tr[1]/td/textarea").send_keys(messageToWrite)
     
-    if (typeOfApplication == 'Renewal' and checkSubstring(applicationStatus, "Stage")) or (checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage")):
+    if checkSubstring(applicationStatus, "Approval pending by initial Authority for change of Authority") or (typeOfApplication == 'Renewal' and checkSubstring(applicationStatus, "Stage")) or (checkSubstring(applicationStatus, "Non-Form C") or checkSubstring(applicationStatus, "Stage")):
         moveTicketToDelayIssuance()
-    elif checkSubstring(applicationStatus, "Rejected"):
+    elif  checkSubstring(problem_description, "surrender") or checkSubstring(applicationStatus, "Rejected"):
         moveTicketToHelpdesk()
         #browser.find_element(By.XPATH, BUTTON_CLOSE_TICKET_XPATH).click()
-        print("Rejected appliation moved to the Heldpdesk")
+        print("Ticket moved to the Heldpdesk")
     
     
 loginForHelpdesk4()
 openTicketsInHelpdesk()
 
-i = 0
-while i <=10:
-      
+numberOfRows = int(browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[1]").text)
+
+while numberOfRows > 0:
+    print("startIndex"+str(startOfIndex)) 
+    print("Number of Rows in table", numberOfRows) 
+    if numberOfRows < 2 :
+        numberOfRows = int(browser.find_element(By.XPATH, "(//table[2]/tbody/tr)[last()]/td[1]").text)
+        startOfIndex = 2
+        
     fetchLastRowApplicationRef()
 
     pmuLogin()
@@ -422,7 +439,8 @@ while i <=10:
     lastRowReferenceNo = ''
     clearTheVariablesToDefault()
     
-    i = i+1
+    numberOfRows = numberOfRows - 1 
+    startOfIndex = startOfIndex + 1
 
     pattern='https://foscos.fssai.gov.in/officer/helpdesk/open-ticket'
     

@@ -51,7 +51,7 @@ tempImageName = "captchaLoginFoscosPmu.png"
 # open an image in the url via src path and store in tempImageName variable
 urllib.request.urlretrieve(imgSrcPath, tempImageName)
 
-image_path = r"captchaLoginFoscosPmu.png"
+image_path = r"C:/Users/LogicSoftIT/Documents/selenium/captchaLoginFoscosPmu.png"
   
 # Opening the image & storing it in an image object
 img = Image.open(image_path)
